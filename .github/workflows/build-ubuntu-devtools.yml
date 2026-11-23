@@ -19,6 +19,7 @@ jobs:
       contents: read
       packages: write
       id-token: write
+      pull-requests: write
     steps:
     - name: Checkout Push to Registry action
       uses: actions/checkout@v4
