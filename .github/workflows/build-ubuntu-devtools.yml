@@ -71,6 +71,7 @@ jobs:
         oci: false
 
     - name: Push GHCR
+      if: github.event_name != 'pull_request'
       uses: redhat-actions/push-to-registry@v2
       id: push
       env:
@@ -93,6 +94,7 @@ jobs:
     - uses: sigstore/cosign-installer@v3.7.0
 
     - name: Sign
+      if: github.event_name != 'pull_request'
       run: |
         cosign sign -y --key env://COSIGN_PRIVATE_KEY ghcr.io/garabelaarondaveg/ubuntu-container-devtools@${TAGS}
       env:
