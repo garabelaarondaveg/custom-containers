@@ -91,7 +91,7 @@ jobs:
         username: ${{ GITHUB.ACTOR }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - uses: sigstore/cosign-installer@v3.7.0
+    - uses: sigstore/cosign-installer@v4.1.3
 
     - name: Sign
       if: github.event_name != 'pull_request'
