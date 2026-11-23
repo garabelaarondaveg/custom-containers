@@ -72,7 +72,7 @@ jobs:
 
     - name: Push GHCR
       if: github.event_name != 'pull_request'
-      uses: redhat-actions/push-to-registry@v2
+      uses: redhat-actions/push-to-registry@v3
       id: push
       env:
         REGISTRY_USER: ${{ github.actor }}
