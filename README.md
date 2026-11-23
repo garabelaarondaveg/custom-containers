@@ -1,2 +1,2 @@
 # Custom Distrobox/Toolbox images
-[![build-ubuntu](https://github.com/garabelaarondaveg/custom-toolboxes/actions/workflows/build-ubuntu.yml/badge.svg)](https://github.com/garabelaarondaveg/custom-toolboxes/actions/workflows/build-ubuntu.yml)
+[![build-ubuntu-devtools](https://github.com/garabelaarondaveg/custom-containers/actions/workflows/build-ubuntu-devtools.yml/badge.svg)](https://github.com/garabelaarondaveg/custom-containers/actions/workflows/build-ubuntu-devtools.yml)
