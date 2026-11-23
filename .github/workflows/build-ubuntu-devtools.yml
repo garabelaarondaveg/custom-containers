@@ -1,0 +1,102 @@
+name: build-ubuntu-devtools
+
+on:
+  pull_request:
+  schedule:
+    - cron: '00 05 * * *'
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**/README.md'
+      - 'LICENSE'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+    - name: Checkout Push to Registry action
+      uses: actions/checkout@v4
+
+    - name: Generate tags
+      id: generate-tags
+      shell: bash
+      run: |
+        TIMESTAMP="$(date +%Y%m%d)"
+        COMMIT_TAGS=()
+        BUILD_TAGS=()
+        SHA_SHORT="${GITHUB_SHA::7}"
+        COMMIT_TAGS+=("pr-${{ github.event.number }}")
+        COMMIT_TAGS+=("${SHA_SHORT}")
+
+        for TAG in "${BUILD_TAGS[@]}"; do
+            BUILD_TAGS+=("${TAG}-${TIMESTAMP}")
+        done
+
+        BUILD_TAGS+=("${TIMESTAMP}")
+        BUILD_TAGS+=("latest")
+
+        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "Generated the following commit tags: "
+            for TAG in "${COMMIT_TAGS[@]}"; do
+                echo "${TAG}"
+            done
+
+            alias_tags=("${COMMIT_TAGS[@]}")
+        else
+            alias_tags=("${BUILD_TAGS[@]}")
+        fi
+
+        echo "Generated the following build tags: "
+        for TAG in "${BUILD_TAGS[@]}"; do
+            echo "${TAG}"
+        done
+
+        echo "alias_tags=${alias_tags[*]}" >> $GITHUB_OUTPUT
+
+    - name: Build image
+      id: build_image
+      uses: redhat-actions/buildah-build@v2
+      with:
+        containerfiles: |
+          ./toolboxes/Containerfile.ubuntu-devtools
+        image: ubuntu-container-devtools
+        tags: |
+          ${{ steps.generate-tags.outputs.alias_tags }}
+        oci: false
+
+    - name: Push GHCR
+      uses: redhat-actions/push-to-registry@v2
+      id: push
+      env:
+        REGISTRY_USER: ${{ github.actor }}
+        REGISTRY_PASSWORD: ${{ github.token }}
+      with:
+        image: ${{ steps.build_image.outputs.image }}
+        tags: ${{ steps.build_image.outputs.tags }}
+        registry: ghcr.io/garabelaarondaveg
+        username: ${{ env.REGISTRY_USER }}
+        password: ${{ env.REGISTRY_PASSWORD }}
+
+    - name: Login GHCR
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ GITHUB.ACTOR }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - uses: sigstore/cosign-installer@v3.7.0
+
+    - name: Sign
+      run: |
+        cosign sign -y --key env://COSIGN_PRIVATE_KEY ghcr.io/garabelaarondaveg/ubuntu-container-devtools@${TAGS}
+      env:
+        TAGS: ${{ steps.push.outputs.digest }}
+        COSIGN_EXPERIMENTAL: false
+        COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
+
